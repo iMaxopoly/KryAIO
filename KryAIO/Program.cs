@@ -16,6 +16,7 @@ using Aimtec;
 using Aimtec.SDK.Events;
 using KryAIO.Champions.Ashe;
 using System;
+using System.Reflection;
 
 namespace KryAIO
 {
@@ -32,7 +33,7 @@ namespace KryAIO
         /// <summary>
         /// The project version
         /// </summary>
-        private const double ProjectVersion = 1.1;
+        private static readonly Version ProjectVersion = Assembly.GetEntryAssembly().GetName().Version;
 
         /// <summary>
         /// Defines the entry point of the application.
