@@ -27,18 +27,6 @@ namespace KryAIO.Champions.Ashe
     public partial class Ashe
     {
         /// <summary>
-        /// Initializes the events.
-        /// </summary>
-        private void InitializeEvents()
-        {
-            Game.OnStart += OnGameOnStart;
-            Game.OnUpdate += OnGameOnUpdate;
-            Game.OnEnd += OnGameOnEnd;
-
-            Render.OnPresent += OnPresent;
-        }
-
-        /// <summary>
         /// Called when [game on start].
         /// </summary>
         protected virtual void OnGameOnStart()
@@ -52,36 +40,18 @@ namespace KryAIO.Champions.Ashe
         /// <exception cref="ArgumentOutOfRangeException"></exception>
         protected virtual void OnGameOnUpdate()
         {
-            if (LocalHero.IsDead || LocalHero.IsRecalling()) return;
+            if (LocalHero.IsDead || LocalHero.IsRecalling() || MenuGUI.IsChatOpen()) return;
 
             ProcessInstagibMechanics().Wait();
 
             switch (Orbwalker.Mode)
             {
-                default:
-                    throw new ArgumentOutOfRangeException(Orbwalker.Mode.ToString());
-
-                case OrbwalkingMode.None:
-                    break;
-
                 case OrbwalkingMode.Combo:
                     ProcessComboMechanics();
                     break;
 
                 case OrbwalkingMode.Mixed:
                     ProcessHarassMechanics();
-                    break;
-
-                case OrbwalkingMode.Laneclear:
-                    break;
-
-                case OrbwalkingMode.Lasthit:
-                    break;
-
-                case OrbwalkingMode.Freeze:
-                    break;
-
-                case OrbwalkingMode.Custom:
                     break;
             }
         }

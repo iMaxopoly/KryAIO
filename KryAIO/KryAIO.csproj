@@ -79,6 +79,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Champions\Ashe\GameEventHooks.cs" />
     <Compile Include="Champions\Champion.cs" />
     <Compile Include="Champions\Ashe\Bootstrap.cs" />
     <Compile Include="Champions\Ashe\GameCombatLogic.cs" />
