@@ -14,9 +14,8 @@
 
 using Aimtec;
 using Aimtec.SDK.Events;
-using KryAIO.Champions.Ashe;
+using KryAIO.Champions.Marksman.Ashe;
 using System;
-using System.Reflection;
 
 namespace KryAIO
 {
@@ -33,7 +32,7 @@ namespace KryAIO
         /// <summary>
         /// The project version
         /// </summary>
-        private static readonly Version ProjectVersion = Assembly.GetEntryAssembly().GetName().Version;
+        private static readonly Version ProjectVersion = new Version(7, 15, 0, 0);
 
         /// <summary>
         /// Defines the entry point of the application.
@@ -56,8 +55,16 @@ namespace KryAIO
                     break;
 
                 case "Ashe":
-                    IChampion championAshe = new Ashe($"{playerChampionName} | {ProjectName} - {ProjectVersion}");
-                    championAshe.Bootstrap();
+                    try
+                    {
+                        IChampion championAshe = new Ashe($"{playerChampionName} | {ProjectName} - {ProjectVersion}");
+                        championAshe.Bootstrap();
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Some exception just got throw: {ex}");
+                        Console.WriteLine($"Stacktrace: {ex.StackTrace}");
+                    }
                     break;
 
                 case "Annie":

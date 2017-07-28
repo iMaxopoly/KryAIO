@@ -1,40 +1,41 @@
 ﻿// ***********************************************************************
 // Assembly         : KryAIO
 // Author           : kryptodev
-// Created          : 07-22-2017
+// Created          : 07-21-2017
 //
 // Last Modified By : kryptodev
 // Last Modified On : 07-22-2017
 // ***********************************************************************
-// <copyright file="GameDrawEvents.cs" company="kryptodev.com">
+// <copyright file="GameMenu.cs" company="kryptodev.com">
 //     Copyright © Kryptodev 2017
 // </copyright>
 // <summary></summary>
 // ***********************************************************************
 
-using Aimtec;
-using System.Drawing;
+using Aimtec.SDK.Menu;
+using Aimtec.SDK.Menu.Components;
 
-namespace KryAIO.Champions.Ashe
+namespace KryAIO.Champions.Marksman.Ashe
 {
     /// <summary>
     /// Class Ashe.
     /// </summary>
-    /// <seealso cref="KryAIO.Champions.Champion" />
+    /// <seealso cref="Champion" />
     /// <seealso cref="KryAIO.IChampion" />
     public partial class Ashe
     {
         /// <summary>
-        /// Called when [present].
+        /// Initializes the menu.
         /// </summary>
-        protected virtual void OnPresent()
+        private void InitializeMenu()
         {
-            if (LocalHero.IsDead) return;
-
-            if (_spellW.Ready && Menu["Drawings"]["DrawW"].Enabled)
+            Orbwalker.Attach(Menu);
+            var drawMenu = new Menu("Drawings", "Drawings");
             {
-                Render.Circle(LocalHero.Position, _spellW.Range, 30, Color.Purple);
+                drawMenu.Add(new MenuBool("DrawW", "Draw W"));
             }
+            Menu.Add(drawMenu);
+            Menu.Attach();
         }
     }
 }

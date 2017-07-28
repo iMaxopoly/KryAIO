@@ -6,36 +6,34 @@
 // Last Modified By : kryptodev
 // Last Modified On : 07-22-2017
 // ***********************************************************************
-// <copyright file="GameMenu.cs" company="kryptodev.com">
+// <copyright file="Bootstrap.cs" company="kryptodev.com">
 //     Copyright © Kryptodev 2017
 // </copyright>
 // <summary></summary>
 // ***********************************************************************
 
-using Aimtec.SDK.Menu;
-using Aimtec.SDK.Menu.Components;
-
-namespace KryAIO.Champions.Ashe
+namespace KryAIO.Champions.Marksman.Ashe
 {
     /// <summary>
     /// Class Ashe.
     /// </summary>
-    /// <seealso cref="KryAIO.Champions.Champion" />
+    /// <seealso cref="Champion" />
     /// <seealso cref="KryAIO.IChampion" />
-    public partial class Ashe
+    partial class Ashe
     {
         /// <summary>
-        /// Initializes the menu.
+        /// Bootstraps this instance.
         /// </summary>
-        private void InitializeMenu()
+        public void Bootstrap()
         {
-            Orbwalker.Attach(Menu);
-            var drawMenu = new Menu("Drawings", "Drawings");
-            {
-                drawMenu.Add(new MenuBool("DrawW", "Draw W"));
-            }
-            Menu.Add(drawMenu);
-            Menu.Attach();
+            // Initialize Spells
+            InitializeSpells();
+
+            // Initialize Menu
+            InitializeMenu();
+
+            // Initialize Game Events
+            InitializeEvents();
         }
     }
 }

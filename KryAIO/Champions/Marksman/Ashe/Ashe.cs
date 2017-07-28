@@ -12,17 +12,17 @@
 // <summary></summary>
 // ***********************************************************************
 
-namespace KryAIO.Champions.Ashe
+namespace KryAIO.Champions.Marksman.Ashe
 {
     /// <summary>
     /// Class Ashe.
     /// </summary>
-    /// <seealso cref="KryAIO.Champions.Champion" />
+    /// <seealso cref="Champion" />
     /// <seealso cref="KryAIO.IChampion" />
-    public partial class Ashe : Champion, IChampion
+    public sealed partial class Ashe : Champion.Champion, IChampion
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="Ashe" /> class.
+        /// Initializes a new instance of the <see cref="Marksman.Ashe.Ashe" /> class.
         /// </summary>
         /// <param name="projectMeta">The project meta.</param>
         public Ashe(string projectMeta)

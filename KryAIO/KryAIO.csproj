@@ -67,33 +67,52 @@
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Aimtec">
+    <Reference Include="Aimtec, Version=1.0.6411.34536, Culture=neutral, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>C:\Users\kryptodev\AppData\Local\AimtecLoader\Data\System\Aimtec.dll</HintPath>
     </Reference>
-    <Reference Include="Aimtec.SDK">
+    <Reference Include="Aimtec.SDK, Version=1.0.0.0, Culture=neutral, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>C:\Users\kryptodev\AppData\Local\AimtecLoader\Data\System\Aimtec.SDK.dll</HintPath>
+    </Reference>
+    <Reference Include="MathNet.Numerics, Version=3.8.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\MathNet.Numerics.3.8.0\lib\net40\MathNet.Numerics.dll</HintPath>
+    </Reference>
+    <Reference Include="MathNet.Spatial, Version=0.4.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\MathNet.Spatial.0.4.0\lib\net40\MathNet.Spatial.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.Numerics" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Champions\Ashe\GameEventHooks.cs" />
-    <Compile Include="Champions\Champion.cs" />
-    <Compile Include="Champions\Ashe\Bootstrap.cs" />
-    <Compile Include="Champions\Ashe\GameCombatLogic.cs" />
-    <Compile Include="Champions\Ashe\GameDrawEvents.cs" />
-    <Compile Include="Champions\Ashe\GameCombatEvents.cs" />
-    <Compile Include="Champions\Ashe\GameMenu.cs" />
-    <Compile Include="Champions\Ashe\ChampionSpells.cs" />
-    <Compile Include="Champions\Ashe\Ashe.cs" />
+    <Compile Include="Champions\Champion\Spells.cs" />
+    <Compile Include="Champions\Champion\Dispose.cs" />
+    <Compile Include="Champions\Champion\Delegates.cs" />
+    <Compile Include="Champions\Champion\Events.cs" />
+    <Compile Include="Champions\Marksman\Ashe\Events.cs" />
+    <Compile Include="Geometry.cs" />
+    <Compile Include="ILogger.cs" />
+    <Compile Include="Krywalk.cs" />
+    <Compile Include="Logger\ConsoleLogger.cs" />
+    <Compile Include="Logger\EventType.cs" />
+    <Compile Include="Logger\LogType.cs" />
+    <Compile Include="Polygon.cs" />
+    <Compile Include="Champions\Champion\Champion.cs" />
+    <Compile Include="Champions\Marksman\Ashe\Bootstrap.cs" />
+    <Compile Include="Champions\Marksman\Ashe\Logic.cs" />
+    <Compile Include="Champions\Marksman\Ashe\Menu.cs" />
+    <Compile Include="Champions\Marksman\Ashe\Spells.cs" />
+    <Compile Include="Champions\Marksman\Ashe\Ashe.cs" />
     <Compile Include="IChampion.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.6.2">
@@ -107,5 +126,6 @@
       <Install>false</Install>
     </BootstrapperPackage>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
