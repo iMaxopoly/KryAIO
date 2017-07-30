@@ -30,11 +30,15 @@ namespace KryAIO.Champions.Marksman.Ashe
         private void InitializeMenu()
         {
             Orbwalker.Attach(Menu);
-            var drawMenu = new Menu("Drawings", "Drawings");
+
+            var drawMenu = new Menu("Drawings", "Drawings")
             {
-                drawMenu.Add(new MenuBool("DrawW", "Draw W"));
-            }
+                new MenuBool("DrawW", "Draw W"),
+                new MenuBool("DrawDamage", "Draw W+Auto Damage")
+            };
             Menu.Add(drawMenu);
+
+
             Menu.Attach();
         }
     }

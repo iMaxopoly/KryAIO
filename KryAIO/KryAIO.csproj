@@ -75,11 +75,11 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>C:\Users\kryptodev\AppData\Local\AimtecLoader\Data\System\Aimtec.SDK.dll</HintPath>
     </Reference>
-    <Reference Include="MathNet.Numerics, Version=3.8.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\MathNet.Numerics.3.8.0\lib\net40\MathNet.Numerics.dll</HintPath>
+    <Reference Include="ceometric.ComputationalGeometry">
+      <HintPath>C:\Users\kryptodev\AppData\Local\AimtecLoader\Data\System\ceometric.ComputationalGeometry.dll</HintPath>
     </Reference>
-    <Reference Include="MathNet.Spatial, Version=0.4.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\MathNet.Spatial.0.4.0\lib\net40\MathNet.Spatial.dll</HintPath>
+    <Reference Include="ceometric.VectorGeometry">
+      <HintPath>C:\Users\kryptodev\AppData\Local\AimtecLoader\Data\System\ceometric.VectorGeometry.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -88,18 +88,24 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Champions\Champion\MapUtility.cs" />
     <Compile Include="Champions\Champion\Spells.cs" />
     <Compile Include="Champions\Champion\Dispose.cs" />
     <Compile Include="Champions\Champion\Delegates.cs" />
     <Compile Include="Champions\Champion\Events.cs" />
     <Compile Include="Champions\Marksman\Ashe\Events.cs" />
+    <Compile Include="Champions\Marksman\Caitlyn\Bootstrap.cs" />
+    <Compile Include="Champions\Marksman\Caitlyn\Caitlyn.cs" />
+    <Compile Include="Champions\Marksman\Caitlyn\Events.cs" />
+    <Compile Include="Champions\Marksman\Caitlyn\Logic.cs" />
+    <Compile Include="Champions\Marksman\Caitlyn\Menu.cs" />
+    <Compile Include="Champions\Marksman\Caitlyn\Spells.cs" />
     <Compile Include="Geometry.cs" />
     <Compile Include="ILogger.cs" />
     <Compile Include="Krywalk.cs" />
     <Compile Include="Logger\ConsoleLogger.cs" />
     <Compile Include="Logger\EventType.cs" />
     <Compile Include="Logger\LogType.cs" />
-    <Compile Include="Polygon.cs" />
     <Compile Include="Champions\Champion\Champion.cs" />
     <Compile Include="Champions\Marksman\Ashe\Bootstrap.cs" />
     <Compile Include="Champions\Marksman\Ashe\Logic.cs" />
@@ -112,7 +118,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.6.2">

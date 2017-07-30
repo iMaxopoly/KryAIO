@@ -15,10 +15,10 @@
 using Aimtec;
 using Aimtec.SDK.Orbwalking;
 using Aimtec.SDK.TargetSelector;
-using KryAIO.Logger;
 using System;
 using System.Drawing;
 using System.Threading.Tasks;
+using Aimtec.SDK.Util.Cache;
 
 namespace KryAIO.Champions.Marksman.Ashe
 {
@@ -44,14 +44,70 @@ namespace KryAIO.Champions.Marksman.Ashe
         }
 
         /// <summary>
-        /// Called when [render on present handler].
+        /// Called when [game on update handler].
         /// </summary>
-        private void OnRenderOnPresentHandler()
+        private void OnGameOnUpdateHandler()
         {
-            if (WSpell.Ready && Menu["Drawings"]["DrawW"].Enabled)
+            var processFarmMechanicsTask = Task.Factory.StartNew(ProcessFarmMechanics);
+
+            var processInstagibMechanicsTask = Task.Factory.StartNew(ProcessInstagibMechanics);
+
+            var processTrickTrapMechanicsTask = Task.Factory.StartNew(ProcessTrickTrapMechanics);
+
+            var processKeyPressMechanicsTask = Task.Factory.StartNew(() =>
             {
-                Render.Circle(LocalHero.Position, WSpell.Range, 50, Color.Aqua);
-            }
+                var target = TargetSelector.GetTarget(LocalHeroTrueRange);
+                if (target == null) return;
+
+                switch (Orbwalker.Mode)
+                {
+                    default:
+                        throw new ArgumentOutOfRangeException($"Unknown {Orbwalker.Mode}");
+
+                    case OrbwalkingMode.Combo:
+                    case OrbwalkingMode.Custom:
+                        ProcessComboMechanics(target);
+                        break;
+
+                    case OrbwalkingMode.Freeze:
+                    case OrbwalkingMode.Lasthit:
+                    case OrbwalkingMode.Mixed:
+                        ProcessHarassMechanics(target);
+                        break;
+
+                    case OrbwalkingMode.Laneclear:
+                        break;
+
+                    case OrbwalkingMode.None:
+                        break;
+                }
+            });
+
+            processInstagibMechanicsTask.Wait();
+            processTrickTrapMechanicsTask.Wait();
+            processKeyPressMechanicsTask.Wait();
+            processFarmMechanicsTask.Wait();
+        }
+
+        /// <summary>
+        /// Called when [game object on create handler].
+        /// </summary>
+        /// <param name="sender">The sender.</param>
+        private void OnGameObjectOnCreateHandler(GameObject sender)
+        {
+            // Safely cast a GameObject to MissileClient.
+            var missileClient = sender as MissileClient;
+
+            // If it's not of type MissileClient we don't care.
+            if (missileClient == null)
+                return;
+
+            // If you need to check data of a spell that you didn't cast remove this conditional or inverse it.
+            if (!missileClient.SpellCaster.IsMe)
+                return;
+
+            // Use any avaialble logging option you have.
+            Console.WriteLine(missileClient.SpellData.Name);
         }
 
         /// <summary>
@@ -92,71 +148,26 @@ namespace KryAIO.Champions.Marksman.Ashe
         }
 
         /// <summary>
-        /// Called when [game object on create handler].
+        /// Called when [render on present handler].
         /// </summary>
-        /// <param name="sender">The sender.</param>
-        private void OnGameObjectOnCreateHandler(GameObject sender)
+        private void OnRenderOnPresentHandler()
         {
-            // Safely cast a GameObject to MissileClient.
-            var missileClient = sender as MissileClient;
-
-            // If it's not of type MissileClient we don't care.
-            if (missileClient == null)
-                return;
-
-            // If you need to check data of a spell that you didn't cast remove this conditional or inverse it.
-            if (!missileClient.SpellCaster.IsMe)
-                return;
-
-            // Use any avaialble logging option you have.
-            Console.WriteLine(missileClient.SpellData.Name);
-        }
-
-        /// <summary>
-        /// Called when [game on update handler].
-        /// </summary>
-        private void OnGameOnUpdateHandler()
-        {
-            Logger.Log($"(x, y, z) = ({LocalHero.Position.X}, {LocalHero.Position.Y}, {LocalHero.Position.Z})",
-                LogType.Log, EventType.OnGameOnUpdateEvent);
-
-            var processInstagibMechanicsTask = Task.Factory.StartNew(ProcessInstagibMechanics);
-
-            var processTrickTrapMechanicsTask = Task.Factory.StartNew(ProcessTrickTrapMechanics);
-
-            var processKeyPressMechanicsTask = Task.Factory.StartNew(() =>
+            if (WSpell.Ready && Menu["Drawings"]["DrawW"].Enabled)
             {
-                var target = TargetSelector.GetTarget(LocalHero.AttackRange);
-                if (target == null) return;
+                Render.Circle(LocalHero.Position, WSpell.Range, 30, Color.Aqua);
+            }
 
-                switch (Orbwalker.Mode)
+            if (WSpell.Ready && Menu["Drawings"]["DrawDamage"].Enabled)
+            {
+                foreach (var hero in GameObjects.EnemyHeroes)
                 {
-                    default:
-                        throw new ArgumentOutOfRangeException($"Unknown {Orbwalker.Mode}");
+                    if (hero.Team != GameObjectTeam.Chaos) continue;
 
-                    case OrbwalkingMode.Combo:
-                    case OrbwalkingMode.Custom:
-                        ProcessComboMechanics(target);
-                        break;
+                    if(!IsKillableWithSpellWAndSpellRAndAutoAttack(hero).Result) continue;
 
-                    case OrbwalkingMode.Freeze:
-                    case OrbwalkingMode.Lasthit:
-                    case OrbwalkingMode.Mixed:
-                        ProcessHarassMechanics(target);
-                        break;
-
-                    case OrbwalkingMode.Laneclear:
-                        ProcessFarmMechanics();
-                        break;
-
-                    case OrbwalkingMode.None:
-                        break;
+                    Render.Text(hero.Position.X, hero.Position.Z, Color.Chartreuse, "Killable(W+R+Auto).");
                 }
-            });
-
-            processInstagibMechanicsTask.Wait();
-            processTrickTrapMechanicsTask.Wait();
-            processKeyPressMechanicsTask.Wait();
+            }
         }
     }
 }

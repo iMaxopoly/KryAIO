@@ -15,9 +15,9 @@
 using Aimtec;
 using Aimtec.SDK.Damage;
 using Aimtec.SDK.Extensions;
-using Aimtec.SDK.Prediction.Skillshots;
 using Aimtec.SDK.Util.Cache;
-using System;
+using ceometric.ComputationalGeometry;
+using ceometric.VectorGeometry;
 using System.Threading.Tasks;
 
 namespace KryAIO.Champions.Marksman.Ashe
@@ -35,16 +35,7 @@ namespace KryAIO.Champions.Marksman.Ashe
         /// <param name="target">The target.</param>
         private void ProcessHarassMechanics(Obj_AI_Base target)
         {
-            if (!WSpell.Ready || !target.IsValidTarget(WSpell.Range)) return;
-
-            try
-            {
-                WSpell.Cast(target);
-            }
-            catch (NullReferenceException exception)
-            {
-                Console.WriteLine($"Null Reference Encountered: {exception.Message}");
-            }
+            CastSpellW(target, SpellPriority.Harass);
         }
 
         /// <summary>
@@ -53,37 +44,39 @@ namespace KryAIO.Champions.Marksman.Ashe
         /// <param name="target">The target.</param>
         private void ProcessComboMechanics(Obj_AI_Base target)
         {
-            if (WSpell.Ready && target.IsValidTarget(WSpell.Range))
-            {
-                try
-                {
-                    WSpell.Cast(target);
-                }
-                catch (NullReferenceException exception)
-                {
-                    Console.WriteLine($"Null Reference Encountered: {exception.Message}");
-                }
-            }
-
-            if (!QSpell.Ready || !target.IsValidTarget(LocalHero.AttackRange)) return;
-            {
-                try
-                {
-                    QSpell.Cast(target);
-                }
-                catch (NullReferenceException exception)
-                {
-                    Console.WriteLine($"Null Reference Encountered: {exception.Message}");
-                }
-            }
+            CastSpellW(target, SpellPriority.Combo);
+            CastSpellQ(target, SpellPriority.Combo);
         }
 
         /// <summary>
         /// Processes the farm mechanics.
         /// </summary>
-        private static void ProcessFarmMechanics()
+        private void ProcessFarmMechanics()
         {
-            // Todo Finish ProcessFarmMechanics
+            if (!WSpell.Ready) return;
+
+            var zoneCircle = new Circle(new Point(LocalHero.Position.X, 0, LocalHero.Position.Z),
+                LocalHeroTrueRange * 3, new Vector3d(LocalHero.Position.X, 0, LocalHero.Position.Z));
+
+            var enemyHeroesCountTask = Task<int>.Factory.StartNew(() => GetEnemyHeroesCountInZone(ref zoneCircle));
+
+            if (enemyHeroesCountTask.Result > 0) return;
+
+            var minionPointSet = new PointSet();
+            foreach (var enemyMinion in GameObjects.EnemyMinions)
+            {
+                if (enemyMinion.Team != GameObjectTeam.Chaos || !enemyMinion.IsValidTarget(WSpell.Range)) continue;
+
+                minionPointSet.Add(new Point(enemyMinion.Position.X, enemyMinion.Position.Z, 0));
+            }
+
+            if (minionPointSet.Count < 2) return;
+
+            var smallestEnclosingCircle = new SmallestEnclosingCircle(minionPointSet);
+            var computedCircle = smallestEnclosingCircle.ComputeCircle();
+
+            CastSpellW(new Vector2((float) computedCircle.Center.X, (float) computedCircle.Center.Y),
+                SpellPriority.Farm);
         }
 
         /// <summary>
@@ -94,7 +87,7 @@ namespace KryAIO.Champions.Marksman.Ashe
         {
             foreach (var enemyHero in GameObjects.EnemyHeroes)
             {
-                if (LocalHero.Distance(enemyHero) >= LocalHero.BoundingRadius + 1200F) continue;
+                if (LocalHero.Distance(enemyHero) > WSpell.Range) continue;
 
                 var taskCheckKillableWithSpellWAndSpellRAndAuto =
                     await IsKillableWithSpellWAndSpellRAndAutoAttack(enemyHero);
@@ -103,42 +96,22 @@ namespace KryAIO.Champions.Marksman.Ashe
                 var taskCheckKillableWithSpellR = await IsKillableWithSpellR(enemyHero);
 
                 if (taskCheckKillableWithSpellWAndSpellRAndAuto)
+
                 {
-                    try
-                    {
-                        RSpell.Cast(enemyHero);
-                        WSpell.Cast(enemyHero);
-                        continue;
-                    }
-                    catch (NullReferenceException exception)
-                    {
-                        Console.WriteLine($"Null Reference Encountered: {exception.Message}");
-                    }
+                    CastSpellR(enemyHero, SpellPriority.Combo);
+                    CastSpellW(enemyHero, SpellPriority.Force);
+                    continue;
                 }
 
                 if (taskCheckKillableWithSpellW)
                 {
-                    try
-                    {
-                        WSpell.Cast(enemyHero);
-                        continue;
-                    }
-                    catch (NullReferenceException exception)
-                    {
-                        Console.WriteLine($"Null Reference Encountered: {exception.Message}");
-                    }
+                    CastSpellW(enemyHero, SpellPriority.Force);
+                    continue;
                 }
 
                 if (!taskCheckKillableWithSpellR) continue;
                 {
-                    try
-                    {
-                        RSpell.Cast(enemyHero);
-                    }
-                    catch (NullReferenceException exception)
-                    {
-                        Console.WriteLine($"Null Reference Encountered: {exception.Message}");
-                    }
+                    CastSpellR(enemyHero, SpellPriority.Combo);
                 }
             }
         }
@@ -148,24 +121,28 @@ namespace KryAIO.Champions.Marksman.Ashe
         /// </summary>
         private void ProcessTrickTrapMechanics()
         {
+            var panicMechanicsTask = Task.Factory.StartNew(() =>
+            {
+                if (LocalHero.HealthPercent() > 33) return;
+
+                foreach (var enemyHero in GameObjects.EnemyHeroes)
+                {
+                    if (LocalHero.Distance(enemyHero) >= LocalHeroTrueRange / 2 || !enemyHero.IsFacing(LocalHero) ||
+                        enemyHero.HealthPercent() <= LocalHero.HealthPercent()) continue;
+
+                    CastSpellR(enemyHero, SpellPriority.Force);
+                    Krywalker.Orbwalk(enemyHero);
+                }
+            });
+
             var underTowerMechanicsTask = Task.Factory.StartNew(() =>
             {
                 foreach (var enemyHero in GameObjects.EnemyHeroes)
                 {
-                    if (LocalHero.Distance(enemyHero) > LocalHero.BoundingRadius + WSpell.Range) continue;
+                    if (!enemyHero.IsUnderAllyTurret() || !enemyHero.IsValidTarget(LocalHeroTrueRange) ||
+                        !LocalHero.IsUnderAllyTurret()) continue;
 
-                    if (!enemyHero.IsUnderAllyTurret() ||
-                        !enemyHero.IsValidTarget(LocalHero.BoundingRadius + WSpell.Range) ||
-                        !RSpell.Ready) continue;
-
-                    try
-                    {
-                        RSpell.Cast(enemyHero);
-                    }
-                    catch (NullReferenceException exception)
-                    {
-                        Console.WriteLine($"Null Reference Encountered: {exception.Message}");
-                    }
+                    CastSpellR(enemyHero, SpellPriority.Force);
                 }
             });
 
@@ -173,107 +150,45 @@ namespace KryAIO.Champions.Marksman.Ashe
             {
                 foreach (var enemyHero in GameObjects.EnemyHeroes)
                 {
-                    if (LocalHero.Distance(enemyHero) > WSpell.Range ||
-                        !enemyHero.IsValidTarget(WSpell.Range)) continue;
+                    if (!enemyHero.IsValidTarget(WSpell.Range)) continue;
 
-                    if (WSpell.Ready)
-                    {
-                        try
-                        {
-                            WSpell.Cast(enemyHero);
-                        }
-                        catch (NullReferenceException exception)
-                        {
-                            Console.WriteLine($"Null Reference Encountered: {exception.Message}");
-                        }
-                    }
+                    CastSpellW(enemyHero, SpellPriority.Combo);
 
-                    if (LocalHero.Distance(enemyHero) >= LocalHero.AttackRange ||
+                    if (!enemyHero.IsValidTarget(LocalHeroTrueRange) ||
                         enemyHero.HealthPercent() > LocalHero.HealthPercent()) continue;
                     {
-                        var zone = new Rectangle(LocalHero.Position - LocalHero.AttackRange / 2,
-                            enemyHero.Position + LocalHero.AttackRange / 2, LocalHero.AttackRange);
+                        var zoneCircle = new Circle(new Point(LocalHero.Position.X, 0, LocalHero.Position.Z),
+                            LocalHeroTrueRange * 3, new Vector3d(LocalHero.Position.X, 0, LocalHero.Position.Z));
 
-                        var allyHeroesCountTask = Task<int>.Factory.StartNew(() =>
+                        var allyHeroesCountTask =
+                            Task<int>.Factory.StartNew(() => GetAllyHeroesCountInZone(ref zoneCircle));
+                        var enemyHeroesCountTask =
+                            Task<int>.Factory.StartNew(() => GetEnemyHeroesCountInZone(ref zoneCircle));
+                        var allyMinionsCountTask =
+                            Task<int>.Factory.StartNew(() => GetAllyMinionsCountInZone(ref zoneCircle));
+                        var enemyMinionsCountTask =
+                            Task<int>.Factory.StartNew(() => GetEnemyMinionsCountInZone(ref zoneCircle));
+
+                        if (allyHeroesCountTask.Result < enemyHeroesCountTask.Result ||
+                            allyMinionsCountTask.Result < enemyMinionsCountTask.Result ||
+                            LocalHero.GetAutoAttackDamage(enemyHero) <= enemyHero.GetAutoAttackDamage(LocalHero) ||
+                            LocalHero.IsUnderEnemyTurret()) continue;
+
+                        if (LocalHero.Distance(enemyHero) < WSpell.Range / 2)
                         {
-                            var allyHeroesCount = 0;
-                            foreach (var hero in GameObjects.AllyHeroes)
-                            {
-                                if (!zone.Contains(hero.Position)) continue;
-
-                                allyHeroesCount++;
-                            }
-                            return allyHeroesCount;
-                        });
-
-                        var enemyHeroesCountTask = Task<int>.Factory.StartNew(() =>
-                        {
-                            var enemyHeroesCount = 0;
-                            foreach (var hero in GameObjects.EnemyHeroes)
-                            {
-                                if (!zone.Contains(hero.Position)) continue;
-
-                                enemyHeroesCount++;
-                            }
-                            return enemyHeroesCount;
-                        });
-
-                        var allyMinionsCountTask = Task<int>.Factory.StartNew(() =>
-                        {
-                            var allyMinionsCount = 0;
-                            foreach (var minion in GameObjects.AllyMinions)
-                            {
-                                if (!zone.Contains(minion.Position)) continue;
-
-                                allyMinionsCount++;
-                            }
-                            return allyMinionsCount;
-                        });
-
-                        var enemyMinionsCountTask = Task<int>.Factory.StartNew(() =>
-                        {
-                            var enemyMinionsCount = 0;
-                            foreach (var minion in GameObjects.EnemyMinions)
-                            {
-                                if (!zone.Contains(minion.Position)) continue;
-
-                                enemyMinionsCount++;
-                            }
-                            return enemyMinionsCount;
-                        });
-
-                        if (allyHeroesCountTask.Result < enemyHeroesCountTask.Result &&
-                            allyMinionsCountTask.Result < enemyMinionsCountTask.Result &&
-                            LocalHero.GetAutoAttackDamage(enemyHero) <
-                            enemyHero.GetAutoAttackDamage(LocalHero) && !LocalHero.IsUnderEnemyTurret()) continue;
-                        if (LocalHero.Distance(enemyHero) < WSpell.Range / 2 ||
-                            RSpell.HitChance == HitChance.VeryHigh)
-                        {
-                            try
-                            {
-                                RSpell.Cast(enemyHero);
-                            }
-                            catch (NullReferenceException exception)
-                            {
-                                Console.WriteLine($"Null Reference Encountered: {exception.Message}");
-                            }
+                            CastSpellR(enemyHero, SpellPriority.Combo);
                         }
 
-                        try
-                        {
-                            QSpell.Cast(enemyHero);
-                        }
-                        catch (NullReferenceException exception)
-                        {
-                            Console.WriteLine($"Null Reference Encountered: {exception.Message}");
-                        }
+                        if (!enemyHero.IsValidTarget(LocalHeroTrueRange)) continue;
+
+                        CastSpellQ(enemyHero, SpellPriority.Combo);
 
                         Krywalker.Orbwalk(enemyHero);
-                        Console.WriteLine("COMBO MODE WORK");
                     }
                 }
             });
 
+            panicMechanicsTask.Wait();
             underTowerMechanicsTask.Wait();
             onOpportunityMechanicsTask.Wait();
         }
@@ -299,7 +214,7 @@ namespace KryAIO.Champions.Marksman.Ashe
         {
             return await Task.FromResult(RSpell.Ready && LocalHero.GetSpellDamage(enemyHero, SpellSlot.R) >
                                          enemyHero.Health + enemyHero.MagicalShield + 20 &&
-                                         enemyHero.IsValidTarget(RSpell.Range));
+                                         enemyHero.IsValidTarget(RSpell.Range) && enemyHero.HasBuff("recall"));
         }
 
         /// <summary>

@@ -48,7 +48,7 @@ namespace KryAIO.Champions.Champion
         /// Delegate OrbwalkerPostAttackHandler
         /// </summary>
         /// <param name="sender">The sender.</param>
-        /// <param name="args">The <see cref="OrbwalkingEventArgs"/> instance containing the event data.</param>
+        /// <param name="args">The <see cref="OrbwalkingEventArgs" /> instance containing the event data.</param>
         protected delegate void OrbwalkerPostAttackHandler(object sender, OrbwalkingEventArgs args);
 
         /// <summary>

@@ -4,7 +4,7 @@
 // Created          : 07-28-2017
 //
 // Last Modified By : kryptodev
-// Last Modified On : 07-28-2017
+// Last Modified On : 07-31-2017
 // ***********************************************************************
 // <copyright file="Spells.cs" company="kryptodev.com">
 //     Copyright © Kryptodev 2017
@@ -22,6 +22,30 @@ namespace KryAIO.Champions.Champion
     /// <seealso cref="System.IDisposable" />
     public abstract partial class Champion
     {
+        /// <summary>
+        /// Enum SpellPriority
+        /// </summary>
+        protected enum SpellPriority
+        {
+            /// <summary>
+            /// The harass priority
+            /// </summary>
+            Harass,
+
+            /// <summary>
+            /// The farm priority
+            /// </summary>
+            Farm,
+            /// <summary>
+            /// The combo priority
+            /// </summary>
+            Combo,
+            /// <summary>
+            /// The force priority
+            /// </summary>
+            Force
+        }
+
         /// <summary>
         /// The q spell
         /// </summary>

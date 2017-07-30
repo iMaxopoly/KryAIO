@@ -14,6 +14,7 @@
 
 using Aimtec;
 using Aimtec.SDK.Extensions;
+using System;
 
 namespace KryAIO
 {
@@ -58,43 +59,32 @@ namespace KryAIO
 
             _lastWindUpTime = 0;
             _lastAttackCooldown = 0;
-            _lastAttack = Game.Ping;
+            _lastAttack = Game.TickCount;
 
-            GameObject.OnCreate += sender =>
+            Obj_AI_Base.OnProcessAutoAttack += ObjAiBaseOnProcessAutoAttack;
+            Obj_AI_Base.OnProcessSpellCast += OnObjAiBaseOnProcessSpellCast;
+        }
+
+        private void OnObjAiBaseOnProcessSpellCast(GameObject sender, Obj_AI_BaseMissileClientDataEventArgs args)
+        {
+            if (_localHero.IsDead) return;
+            if (!sender.IsMe) return;
+
+            if (args.SpellSlot == SpellSlot.W)
             {
-                if (_localHero.IsDead) return;
-
-                var missileClient = sender as MissileClient;
-                if (missileClient == null) return;
-
-                if (!sender.IsMe) return;
-                if ((missileClient.Name.Contains("attack") || IsSpellAttack(missileClient.Name)) &&
-                    !IsNotAttack(missileClient.Name))
-                {
-                    _lastAttack = Game.TickCount - Game.Ping / 2;
-                    _lastWindUpTime = (_localHero.AttackCastDelay + 90) * 1000;
-                    _lastAttackCooldown = _localHero.AttackDelay * 1000;
-                }
-                else if (RefreshAttack(missileClient.Name))
-                {
-                    _lastAttack = Game.TickCount - Game.Ping / 2 - _lastAttackCooldown;
-                }
-            };
+                _lastAttack = Game.TickCount - Game.Ping / 2 - _lastAttackCooldown;
+            }
         }
 
-        private bool RefreshAttack(string missileClientName)
+        private void ObjAiBaseOnProcessAutoAttack(GameObject sender,
+            Obj_AI_BaseMissileClientDataEventArgs objAiBaseMissileClientDataEventArgs)
         {
-            return false;
-        }
+            if (_localHero.IsDead) return;
+            if (!sender.IsMe) return;
 
-        private bool IsNotAttack(string missileClientName)
-        {
-            return false;
-        }
-
-        private bool IsSpellAttack(string spellName)
-        {
-            return spellName == "frostarrow";
+            _lastAttack = Game.TickCount - Game.Ping / 2;
+            _lastWindUpTime = _localHero.AttackDelay * 1000;
+            _lastAttackCooldown = _localHero.AttackCastDelay * 1000;
         }
 
         /// <summary>
@@ -104,12 +94,25 @@ namespace KryAIO
         public void Orbwalk(GameObject targetHero)
         {
             if (targetHero == null)
+            {
+                Console.WriteLine("Target is null but called");
                 return;
+            }
+
+            Console.WriteLine("HeroCanMove. {0} > {1} {2}-{3}", Game.TickCount + Game.Ping / 2, _lastAttack + _lastWindUpTime + 90,
+                _lastAttack, _lastWindUpTime);
+            Console.WriteLine("TimeToShoot {0} > {1} {2}-{3}", Game.TickCount + Game.Ping / 2 , _lastAttack + _lastAttackCooldown,
+                _lastAttack, _lastAttackCooldown);
+
 
             if (TimeToShoot())
+            {
                 _localHero.IssueOrder(OrderType.AttackUnit, targetHero);
+            }
             else if (HeroCanMove())
+            {
                 MoveToCursor();
+            }
         }
 
         /// <summary>
@@ -127,7 +130,7 @@ namespace KryAIO
         /// <returns><c>true</c> if XXXX, <c>false</c> otherwise.</returns>
         private bool HeroCanMove()
         {
-            return Game.TickCount + Game.Ping / 2 > _lastAttack + _lastWindUpTime + 20;
+            return Game.TickCount + Game.Ping / 2 > _lastAttack + _lastWindUpTime + 90;
         }
 
         /// <summary>
@@ -136,7 +139,7 @@ namespace KryAIO
         /// <returns><c>true</c> if XXXX, <c>false</c> otherwise.</returns>
         private bool TimeToShoot()
         {
-            return Game.TickCount + Game.Ping / 2 > _lastAttack + _lastAttackCooldown;
+            return Game.TickCount + Game.Ping / 2 > _lastAttack + _lastWindUpTime;
         }
     }
 }

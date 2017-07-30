@@ -52,6 +52,11 @@ namespace KryAIO.Champions.Champion
         protected readonly Menu Menu;
 
         /// <summary>
+        /// The local hero true range
+        /// </summary>
+        protected readonly float LocalHeroTrueRange;
+
+        /// <summary>
         /// The list of jungle monsters
         /// </summary>
         protected readonly string[] JungleMonsters =
@@ -63,7 +68,7 @@ namespace KryAIO.Champions.Champion
         };
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Champion"/> class.
+        /// Initializes a new instance of the <see cref="Champion" /> class.
         /// </summary>
         protected Champion()
         {
@@ -73,6 +78,8 @@ namespace KryAIO.Champions.Champion
             Orbwalker = new Orbwalker();
             Krywalker = new Krywalk();
             Menu = new Menu(null, null, true);
+
+            LocalHeroTrueRange = LocalHero.BoundingRadius + LocalHero.AttackRange;
 
             Game.OnStart += OnGameOnStart;
             Game.OnUpdate += OnGameOnUpdate;
