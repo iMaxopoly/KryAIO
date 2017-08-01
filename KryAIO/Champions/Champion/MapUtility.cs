@@ -11,6 +11,9 @@
 // </copyright>
 // <summary></summary>
 // ***********************************************************************
+
+using Aimtec;
+using Aimtec.SDK.Extensions;
 using Aimtec.SDK.Util.Cache;
 using ceometric.VectorGeometry;
 
@@ -90,6 +93,11 @@ namespace KryAIO.Champions.Champion
                 enemyMinionsCount++;
             }
             return enemyMinionsCount;
+        }
+
+        protected bool IsValidTargetLocked(AttackableUnit target, float range = float.MaxValue)
+        {
+            return TargetValidateLocker.RunWithLock(target.NetworkId, () => target.IsValidTarget(range));
         }
     }
 }

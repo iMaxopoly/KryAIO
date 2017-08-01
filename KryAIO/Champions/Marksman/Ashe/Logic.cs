@@ -19,6 +19,7 @@ using Aimtec.SDK.Util.Cache;
 using ceometric.ComputationalGeometry;
 using ceometric.VectorGeometry;
 using System.Threading.Tasks;
+using Aimtec.SDK.Orbwalking;
 
 namespace KryAIO.Champions.Marksman.Ashe
 {
@@ -53,10 +54,10 @@ namespace KryAIO.Champions.Marksman.Ashe
         /// </summary>
         private void ProcessFarmMechanics()
         {
-            if (!WSpell.Ready) return;
+            if (Orbwalker.Mode == OrbwalkingMode.Combo || !WSpell.Ready) return;
 
-            var zoneCircle = new Circle(new Point(LocalHero.Position.X, 0, LocalHero.Position.Z),
-                LocalHeroTrueRange * 3, new Vector3d(LocalHero.Position.X, 0, LocalHero.Position.Z));
+            var zoneCircle = Geometry.GetNewCircleAtPoint(new Point(LocalHero.Position.X, 0, LocalHero.Position.Z),
+                LocalHeroTrueRange * 3);
 
             var enemyHeroesCountTask = Task<int>.Factory.StartNew(() => GetEnemyHeroesCountInZone(ref zoneCircle));
 
@@ -65,7 +66,7 @@ namespace KryAIO.Champions.Marksman.Ashe
             var minionPointSet = new PointSet();
             foreach (var enemyMinion in GameObjects.EnemyMinions)
             {
-                if (enemyMinion.Team != GameObjectTeam.Chaos || !enemyMinion.IsValidTarget(WSpell.Range)) continue;
+                if (enemyMinion.Team != GameObjectTeam.Chaos || !IsValidTargetLocked(enemyMinion, WSpell.Range)) continue;
 
                 minionPointSet.Add(new Point(enemyMinion.Position.X, enemyMinion.Position.Z, 0));
             }
@@ -139,7 +140,7 @@ namespace KryAIO.Champions.Marksman.Ashe
             {
                 foreach (var enemyHero in GameObjects.EnemyHeroes)
                 {
-                    if (!enemyHero.IsUnderAllyTurret() || !enemyHero.IsValidTarget(LocalHeroTrueRange) ||
+                    if (!enemyHero.IsUnderAllyTurret() || !IsValidTargetLocked(enemyHero, LocalHeroTrueRange) ||
                         !LocalHero.IsUnderAllyTurret()) continue;
 
                     CastSpellR(enemyHero, SpellPriority.Force);
@@ -150,15 +151,15 @@ namespace KryAIO.Champions.Marksman.Ashe
             {
                 foreach (var enemyHero in GameObjects.EnemyHeroes)
                 {
-                    if (!enemyHero.IsValidTarget(WSpell.Range)) continue;
+                    if (!IsValidTargetLocked(enemyHero, WSpell.Range)) continue;
 
                     CastSpellW(enemyHero, SpellPriority.Combo);
 
-                    if (!enemyHero.IsValidTarget(LocalHeroTrueRange) ||
+                    if (!IsValidTargetLocked(enemyHero, LocalHeroTrueRange) ||
                         enemyHero.HealthPercent() > LocalHero.HealthPercent()) continue;
                     {
-                        var zoneCircle = new Circle(new Point(LocalHero.Position.X, 0, LocalHero.Position.Z),
-                            LocalHeroTrueRange * 3, new Vector3d(LocalHero.Position.X, 0, LocalHero.Position.Z));
+                        var zoneCircle = Geometry.GetNewCircleAtPoint(new Point(LocalHero.Position.X, 0, LocalHero.Position.Z),
+                            LocalHeroTrueRange * 3);
 
                         var allyHeroesCountTask =
                             Task<int>.Factory.StartNew(() => GetAllyHeroesCountInZone(ref zoneCircle));
@@ -174,12 +175,12 @@ namespace KryAIO.Champions.Marksman.Ashe
                             LocalHero.GetAutoAttackDamage(enemyHero) <= enemyHero.GetAutoAttackDamage(LocalHero) ||
                             LocalHero.IsUnderEnemyTurret()) continue;
 
-                        if (LocalHero.Distance(enemyHero) < WSpell.Range / 2)
+                        if (IsValidTargetLocked(enemyHero, WSpell.Range / 2))
                         {
                             CastSpellR(enemyHero, SpellPriority.Combo);
                         }
 
-                        if (!enemyHero.IsValidTarget(LocalHeroTrueRange)) continue;
+                        if (!IsValidTargetLocked(enemyHero, LocalHeroTrueRange)) continue;
 
                         CastSpellQ(enemyHero, SpellPriority.Combo);
 
@@ -202,7 +203,7 @@ namespace KryAIO.Champions.Marksman.Ashe
         {
             return await Task.FromResult(WSpell.Ready && LocalHero.GetSpellDamage(enemyHero, SpellSlot.W) >
                                          enemyHero.Health + enemyHero.PhysicalShield + 20 &&
-                                         enemyHero.IsValidTarget(WSpell.Range));
+                                         IsValidTargetLocked(enemyHero,WSpell.Range));
         }
 
         /// <summary>
@@ -214,7 +215,7 @@ namespace KryAIO.Champions.Marksman.Ashe
         {
             return await Task.FromResult(RSpell.Ready && LocalHero.GetSpellDamage(enemyHero, SpellSlot.R) >
                                          enemyHero.Health + enemyHero.MagicalShield + 20 &&
-                                         enemyHero.IsValidTarget(RSpell.Range) && enemyHero.HasBuff("recall"));
+                                         IsValidTargetLocked(enemyHero, RSpell.Range) && enemyHero.HasBuff("recall"));
         }
 
         /// <summary>
@@ -225,12 +226,11 @@ namespace KryAIO.Champions.Marksman.Ashe
         private async Task<bool> IsKillableWithSpellWAndSpellRAndAutoAttack(Obj_AI_Base enemyHero)
         {
             return await Task.FromResult(WSpell.Ready && RSpell.Ready &&
-                                         LocalHero.Distance(enemyHero) < WSpell.Range &&
                                          LocalHero.GetSpellDamage(enemyHero, SpellSlot.W) +
                                          LocalHero.GetSpellDamage(enemyHero, SpellSlot.R) +
                                          LocalHero.GetAutoAttackDamage(enemyHero) >
                                          enemyHero.Health + enemyHero.PhysicalShield &&
-                                         enemyHero.IsValidTarget(WSpell.Range));
+                                         IsValidTargetLocked(enemyHero, WSpell.Range));
         }
     }
 }

@@ -19,6 +19,7 @@ using System;
 using System.Drawing;
 using System.Threading.Tasks;
 using Aimtec.SDK.Util.Cache;
+using KryAIO.Logger;
 
 namespace KryAIO.Champions.Marksman.Ashe
 {
@@ -59,6 +60,7 @@ namespace KryAIO.Champions.Marksman.Ashe
                 var target = TargetSelector.GetTarget(LocalHeroTrueRange);
                 if (target == null) return;
 
+                Logger.Log($"Network ID:{target.NetworkId}| Name: {target.Name} ", LogType.Log, EventType.OnGameOnUpdateEvent);
                 switch (Orbwalker.Mode)
                 {
                     default:
@@ -122,29 +124,8 @@ namespace KryAIO.Champions.Marksman.Ashe
                 jungleTarget.Name == "WardCorpse" || jungleTarget.Name == "Barrel" ||
                 jungleTarget.Name.Contains("SRU_Plant_")) return;
 
-            if (WSpell.Ready)
-            {
-                try
-                {
-                    WSpell.Cast(jungleTarget);
-                }
-                catch (NullReferenceException exception)
-                {
-                    Console.WriteLine($"Null Reference Encountered: {exception.Message}");
-                }
-            }
-
-            if (!QSpell.Ready) return;
-            {
-                try
-                {
-                    QSpell.Cast(jungleTarget);
-                }
-                catch (NullReferenceException exception)
-                {
-                    Console.WriteLine($"Null Reference Encountered: {exception.Message}");
-                }
-            }
+            CastSpellW(jungleTarget, SpellPriority.Combo);
+            CastSpellQ(jungleTarget, SpellPriority.Combo);
         }
 
         /// <summary>
@@ -155,18 +136,6 @@ namespace KryAIO.Champions.Marksman.Ashe
             if (WSpell.Ready && Menu["Drawings"]["DrawW"].Enabled)
             {
                 Render.Circle(LocalHero.Position, WSpell.Range, 30, Color.Aqua);
-            }
-
-            if (WSpell.Ready && Menu["Drawings"]["DrawDamage"].Enabled)
-            {
-                foreach (var hero in GameObjects.EnemyHeroes)
-                {
-                    if (hero.Team != GameObjectTeam.Chaos) continue;
-
-                    if(!IsKillableWithSpellWAndSpellRAndAutoAttack(hero).Result) continue;
-
-                    Render.Text(hero.Position.X, hero.Position.Z, Color.Chartreuse, "Killable(W+R+Auto).");
-                }
             }
         }
     }

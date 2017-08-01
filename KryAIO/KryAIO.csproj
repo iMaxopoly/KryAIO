@@ -113,6 +113,7 @@
     <Compile Include="Champions\Marksman\Ashe\Spells.cs" />
     <Compile Include="Champions\Marksman\Ashe\Ashe.cs" />
     <Compile Include="IChampion.cs" />
+    <Compile Include="NamedLocker.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

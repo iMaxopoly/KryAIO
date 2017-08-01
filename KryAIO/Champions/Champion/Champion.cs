@@ -17,6 +17,7 @@ using Aimtec.SDK.Menu;
 using Aimtec.SDK.Orbwalking;
 using KryAIO.Logger;
 using System;
+using Aimtec.SDK.Menu.Components;
 
 namespace KryAIO.Champions.Champion
 {
@@ -51,10 +52,16 @@ namespace KryAIO.Champions.Champion
         /// </summary>
         protected readonly Menu Menu;
 
+        protected readonly Menu CreditsMenu;
+
+        protected readonly NamedLocker TargetValidateLocker;
+        protected readonly NamedLocker SpellCastLocker;
+
         /// <summary>
         /// The local hero true range
         /// </summary>
         protected readonly float LocalHeroTrueRange;
+
 
         /// <summary>
         /// The list of jungle monsters
@@ -72,11 +79,20 @@ namespace KryAIO.Champions.Champion
         /// </summary>
         protected Champion()
         {
+            TargetValidateLocker = new NamedLocker();
+            SpellCastLocker = new NamedLocker();
             Logger = new ConsoleLogger();
+            CreditsMenu = new Menu("Credits", "Credits")
+            {
+                new MenuSeperator("Github", "Github: github.com/kryptodev"),
+                new MenuSeperator("Skype", "Skype: kryptodev"),
+                new MenuSeperator("Discord", "Discord: kryptodev#7194"),
+            };
 
             LocalHero = ObjectManager.GetLocalPlayer();
             Orbwalker = new Orbwalker();
             Krywalker = new Krywalk();
+
             Menu = new Menu(null, null, true);
 
             LocalHeroTrueRange = LocalHero.BoundingRadius + LocalHero.AttackRange;

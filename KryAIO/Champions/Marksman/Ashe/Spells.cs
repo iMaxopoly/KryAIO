@@ -13,7 +13,6 @@
 // ***********************************************************************
 
 using Aimtec;
-using Aimtec.SDK.Extensions;
 using Aimtec.SDK.Prediction.Skillshots;
 using KryAIO.Logger;
 using Spell = Aimtec.SDK.Spell;
@@ -50,29 +49,32 @@ namespace KryAIO.Champions.Marksman.Ashe
         /// <param name="priority">The priority.</param>
         private void CastSpellQ(AttackableUnit target, SpellPriority priority)
         {
-            if (!QSpell.Ready || !target.IsValidTarget(LocalHeroTrueRange)) return;
-
-            var localHeroMana = 100 * LocalHero.Mana / LocalHero.MaxMana;
-
-            switch (priority)
+            SpellCastLocker.RunWithLock((int) QSpell.Slot, () =>
             {
-                case SpellPriority.Harass:
-                    if (localHeroMana > 70)
+                if (!QSpell.Ready || !IsValidTargetLocked(target, LocalHeroTrueRange)) return;
+
+                var localHeroMana = 100 * LocalHero.Mana / LocalHero.MaxMana;
+
+                switch (priority)
+                {
+                    case SpellPriority.Harass:
+                        if (localHeroMana > 70)
+                            QSpell.Cast();
+                        break;
+                    case SpellPriority.Farm:
+                        if (localHeroMana > 80)
+                            QSpell.Cast();
+                        break;
+                    case SpellPriority.Combo:
+                    case SpellPriority.Force:
                         QSpell.Cast();
-                    break;
-                case SpellPriority.Farm:
-                    if (localHeroMana > 80)
-                        QSpell.Cast();
-                    break;
-                case SpellPriority.Combo:
-                case SpellPriority.Force:
-                    QSpell.Cast();
-                    break;
-                default:
-                    Logger.Log($"Caught ArgumentOutOfRangeException: {nameof(priority)}, {priority}", LogType.Error,
-                        EventType.OnGameOnUpdateEvent);
-                    break;
-            }
+                        break;
+                    default:
+                        Logger.Log($"Caught ArgumentOutOfRangeException: {nameof(priority)}, {priority}", LogType.Error,
+                            EventType.OnGameOnUpdateEvent);
+                        break;
+                }
+            });
         }
 
         /// <summary>
@@ -82,34 +84,37 @@ namespace KryAIO.Champions.Marksman.Ashe
         /// <param name="priority">The priority.</param>
         private void CastSpellW(Vector2 castPosition, SpellPriority priority)
         {
-            if (!WSpell.Ready) return;
-
-            var localHeroMana = 100 * LocalHero.Mana / LocalHero.MaxMana;
-
-            switch (priority)
+            SpellCastLocker.RunWithLock((int) WSpell.Slot, () =>
             {
-                case SpellPriority.Harass:
-                    if (localHeroMana > 55)
-                        WSpell.Cast(castPosition);
-                    else if (localHeroMana > 30 && localHeroMana <= 55)
-                        WSpell.Cast(castPosition);
-                    else if (localHeroMana <= 30)
-                        WSpell.Cast(castPosition);
-                    break;
-                case SpellPriority.Farm:
-                    if (localHeroMana > 30)
-                        WSpell.Cast(castPosition);
-                    break;
-                case SpellPriority.Combo:
-                case SpellPriority.Force:
-                    WSpell.Cast(castPosition);
-                    break;
+                if (!WSpell.Ready) return;
 
-                default:
-                    Logger.Log($"Caught ArgumentOutOfRangeException: {nameof(priority)}, {priority}", LogType.Error,
-                        EventType.OnGameOnUpdateEvent);
-                    break;
-            }
+                var localHeroMana = 100 * LocalHero.Mana / LocalHero.MaxMana;
+
+                switch (priority)
+                {
+                    case SpellPriority.Harass:
+                        if (localHeroMana > 55)
+                            WSpell.Cast(castPosition);
+                        else if (localHeroMana > 30 && localHeroMana <= 55)
+                            WSpell.Cast(castPosition);
+                        else if (localHeroMana <= 30)
+                            WSpell.Cast(castPosition);
+                        break;
+                    case SpellPriority.Farm:
+                        if (localHeroMana > 30)
+                            WSpell.Cast(castPosition);
+                        break;
+                    case SpellPriority.Combo:
+                    case SpellPriority.Force:
+                        WSpell.Cast(castPosition);
+                        break;
+
+                    default:
+                        Logger.Log($"Caught ArgumentOutOfRangeException: {nameof(priority)}, {priority}", LogType.Error,
+                            EventType.OnGameOnUpdateEvent);
+                        break;
+                }
+            });
         }
 
         /// <summary>
@@ -119,39 +124,43 @@ namespace KryAIO.Champions.Marksman.Ashe
         /// <param name="priority">The priority.</param>
         private void CastSpellW(Obj_AI_Base target, SpellPriority priority)
         {
-            if (!WSpell.Ready || !target.IsValidTarget(WSpell.Range)) return;
-
-            var localHeroMana = 100 * LocalHero.Mana / LocalHero.MaxMana;
-
-            var targetPrediction = WSpell.GetPrediction(target);
-            switch (priority)
+            SpellCastLocker.RunWithLock((int) WSpell.Slot, () =>
             {
-                case SpellPriority.Harass:
-                    if (localHeroMana > 55 && targetPrediction.HitChance >= HitChance.Medium)
-                        WSpell.Cast(targetPrediction.CastPosition);
-                    else if (localHeroMana > 30 && localHeroMana <= 55 && targetPrediction.HitChance >= HitChance.High)
-                        WSpell.Cast(targetPrediction.CastPosition);
-                    else if (localHeroMana <= 30 && targetPrediction.HitChance >= HitChance.VeryHigh)
-                        WSpell.Cast(targetPrediction.CastPosition);
-                    break;
-                case SpellPriority.Farm:
-                    if (localHeroMana > 30 && targetPrediction.HitChance >= HitChance.Low)
-                        WSpell.Cast(targetPrediction.CastPosition);
-                    break;
-                case SpellPriority.Combo:
-                    if (targetPrediction.HitChance >= HitChance.Medium)
-                        WSpell.Cast(targetPrediction.CastPosition);
-                    break;
-                case SpellPriority.Force:
-                    if (targetPrediction.HitChance >= HitChance.Low)
-                        WSpell.Cast(targetPrediction.CastPosition);
-                    break;
+                if (!WSpell.Ready || !IsValidTargetLocked(target, WSpell.Range)) return;
 
-                default:
-                    Logger.Log($"Caught ArgumentOutOfRangeException: {nameof(priority)}, {priority}", LogType.Error,
-                        EventType.OnGameOnUpdateEvent);
-                    break;
-            }
+                var localHeroMana = 100 * LocalHero.Mana / LocalHero.MaxMana;
+
+                var targetPrediction = WSpell.GetPrediction(target);
+                switch (priority)
+                {
+                    case SpellPriority.Harass:
+                        if (localHeroMana > 55 && targetPrediction.HitChance >= HitChance.Medium)
+                            WSpell.Cast(targetPrediction.CastPosition);
+                        else if (localHeroMana > 30 && localHeroMana <= 55 &&
+                                 targetPrediction.HitChance >= HitChance.High)
+                            WSpell.Cast(targetPrediction.CastPosition);
+                        else if (localHeroMana <= 30 && targetPrediction.HitChance >= HitChance.VeryHigh)
+                            WSpell.Cast(targetPrediction.CastPosition);
+                        break;
+                    case SpellPriority.Farm:
+                        if (localHeroMana > 30 && targetPrediction.HitChance >= HitChance.Low)
+                            WSpell.Cast(targetPrediction.CastPosition);
+                        break;
+                    case SpellPriority.Combo:
+                        if (targetPrediction.HitChance >= HitChance.Medium)
+                            WSpell.Cast(targetPrediction.CastPosition);
+                        break;
+                    case SpellPriority.Force:
+                        if (targetPrediction.HitChance >= HitChance.Low)
+                            WSpell.Cast(targetPrediction.CastPosition);
+                        break;
+
+                    default:
+                        Logger.Log($"Caught ArgumentOutOfRangeException: {nameof(priority)}, {priority}", LogType.Error,
+                            EventType.OnGameOnUpdateEvent);
+                        break;
+                }
+            });
         }
 
         /// <summary>
@@ -161,28 +170,31 @@ namespace KryAIO.Champions.Marksman.Ashe
         /// <param name="priority">The priority.</param>
         private void CastSpellR(Obj_AI_Base target, SpellPriority priority)
         {
-            if (!RSpell.Ready) return;
-
-            var targetPrediction = RSpell.GetPrediction(target);
-            switch (priority)
+            SpellCastLocker.RunWithLock((int) RSpell.Slot, () =>
             {
-                case SpellPriority.Harass:
-                    break;
-                case SpellPriority.Combo:
-                    if (targetPrediction.HitChance >= HitChance.High)
-                        RSpell.Cast(targetPrediction.CastPosition);
-                    break;
-                case SpellPriority.Force:
-                    if (targetPrediction.HitChance >= HitChance.Low)
-                        RSpell.Cast(targetPrediction.CastPosition);
-                    break;
-                case SpellPriority.Farm:
-                    break;
-                default:
-                    Logger.Log($"Caught ArgumentOutOfRangeException: {nameof(priority)}, {priority}", LogType.Error,
-                        EventType.OnGameOnUpdateEvent);
-                    break;
-            }
+                if (!RSpell.Ready) return;
+
+                var targetPrediction = RSpell.GetPrediction(target);
+                switch (priority)
+                {
+                    case SpellPriority.Harass:
+                        break;
+                    case SpellPriority.Combo:
+                        if (targetPrediction.HitChance >= HitChance.High)
+                            RSpell.Cast(targetPrediction.CastPosition);
+                        break;
+                    case SpellPriority.Force:
+                        if (targetPrediction.HitChance >= HitChance.Low)
+                            RSpell.Cast(targetPrediction.CastPosition);
+                        break;
+                    case SpellPriority.Farm:
+                        break;
+                    default:
+                        Logger.Log($"Caught ArgumentOutOfRangeException: {nameof(priority)}, {priority}", LogType.Error,
+                            EventType.OnGameOnUpdateEvent);
+                        break;
+                }
+            });
         }
     }
 }
